@@ -12,6 +12,7 @@ class ArticleIndex(Document):
     pathPDF = Keyword()
     publication_date = Date()
     likes = Integer()
+    search = Integer()
 
     class Index:
         name = "articles_index"

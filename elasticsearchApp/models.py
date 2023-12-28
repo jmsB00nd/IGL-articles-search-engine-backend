@@ -12,6 +12,7 @@ class Article(models.Model):
     pathPDF = models.CharField(max_length=255)
     publication_date = models.DateField(null=True, blank=True)
     likes = models.IntegerField(default=0)
+    search = models.IntegerField(default=0)
 
     def __str__(self):
         return self.titre

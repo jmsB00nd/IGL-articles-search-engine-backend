@@ -11,3 +11,5 @@ class ArticleIndexSerializer(serializers.Serializer):
     motsCles = serializers.CharField()
     urlPDF = serializers.CharField()
     pathPDF = serializers.CharField()
+    likes = serializers.IntegerField()
+    search = serializers.IntegerField()
