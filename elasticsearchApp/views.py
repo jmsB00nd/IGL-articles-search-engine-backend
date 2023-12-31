@@ -13,7 +13,7 @@ def add_article(request):
     serializer = ArticleIndexSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    # Create an instance of the ArticleIndex document
+    # Create an<Route path="/" element={<GererArticle />} /> instance of the ArticleIndex document
     article_document = ArticleIndex(**serializer.validated_data)
 
     # Save the document to Elasticsearch
