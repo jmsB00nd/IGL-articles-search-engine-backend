@@ -15,8 +15,7 @@ class PaperHubUser(models.Model):
 class Moderator(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=50, default='moderator')
-    moderatorFname = models.CharField(max_length=100)
-    moderatorLname = models.CharField(max_length=100)
+    
 
     def __str__(self):
         return self.user.username

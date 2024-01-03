@@ -2,10 +2,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import User
-from .models import PaperHubUser
+from .models import PaperHubUser,Moderator,Admin
 from .serializers import UserSignupSerializer
-from .serializers import PaperHubUserSerializer
+from .serializers import PaperHubUserSerializer,ModeratorSerializer
 from django.contrib.auth import login
+from django.shortcuts import get_object_or_404
 
 @api_view(['POST'])
 def signup(request):
@@ -67,4 +68,56 @@ def update_user(request, user_id):
     serializer = PaperHubUserSerializer(paperhub_user)
     return Response(serializer.data, status=status.HTTP_200_OK)
     
+@api_view(['PUT'])
+def update_moderator(request, user_id):
+    try:
+        moderator = Moderator.objects.get(id=user_id)
+    except Moderator.DoesNotExist:
+        return Response({'error': 'Moderator not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    data = request.data.get('user', {})
+    serializer = ModeratorSerializer(instance=moderator, data=data, partial=True)
+
+    if serializer.is_valid():
+        # Update User information
+        user = moderator.user
+        user.username = data.get('username', user.username)
+        user.email = data.get('email', user.email)
+        user.set_password(data.get('password', user.password))  # Hash the password
+
+        # Save the updated User
+        user.save()
+
+        # Save the updated PaperHubUser
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+@api_view(['POST'])
+def add_moderator(request):
+    # Get user data from the request, adjust this based on your requirements
+    username = request.data.get('username')
+    email = request.data.get('email')
+    password = request.data.get('password')
+
+    # Create a new user
+    user = User.objects.create(username=username, email=email)
+    user.set_password(password)
+    user.save()
+
+    # Check if the user is already a moderator
+    if Moderator.objects.filter(user=user).exists():
+        return Response({"detail": "User is already a moderator"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create a moderator instance and associate it with the user
+    moderator = Moderator.objects.create(user=user, role='moderator')
+
+    # Set is_staff to True
+    user.is_staff = True
+    user.save()
+
+    return Response({"detail": "Moderator added successfully"}, status=status.HTTP_200_OK)
