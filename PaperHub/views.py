@@ -7,6 +7,7 @@ from .serializers import UserSignupSerializer
 from .serializers import PaperHubUserSerializer,ModeratorSerializer
 from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
+from elasticsearchApp.models import Article
 
 @api_view(['POST'])
 def signup(request):
@@ -27,6 +28,17 @@ def signup(request):
     else:
         return Response({'error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
     
+@api_view(['POST'])
+def add_to_favorite(request, user_id, article_id):
+    user_profile = get_object_or_404(PaperHubUser, pk=user_id)
+    article = get_object_or_404(Article, pk=article_id)
+
+    if article not in user_profile.favorite_articles.all():
+        user_profile.favorite_articles.add(article)
+        return Response({'detail': 'Article added to favorites.'}, status=201)  # 201 Created
+    else:
+        user_profile.favorite_articles.remove(article)
+        return Response({'detail': 'Article removed from favorites.'}, status=200)  # 200 OK
 
 @api_view(['PUT'])
 def update_user(request, user_id):
