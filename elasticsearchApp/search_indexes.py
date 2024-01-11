@@ -1,18 +1,15 @@
-from elasticsearch_dsl import Text,Document,Keyword,Date,Integer
+from elasticsearch_dsl import Text,Document,Keyword,Integer
 
 class ArticleIndex(Document):
-    titre = Text()
-    auteurs = Text()
-    institutions = Text()
+    id = Keyword()
+    title = Text()
+    authors = Keyword(multi=True)
+    institutions = Keyword(multi=True)
     resume = Text()
-    contenu = Text()
-    references = Text()
-    motsCles = Text()
+    content = Text()
+    references = Keyword(multi=True)
+    keywords = Keyword(multi=True)
     urlPDF = Keyword()
-    pathPDF = Keyword()
-    publication_date = Date()
-    likes = Integer()
-    search = Integer()
 
     class Index:
         name = "articles_index"

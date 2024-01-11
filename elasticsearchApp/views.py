@@ -1,15 +1,13 @@
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
 from .utils import (
     download_pdf_from_url,
     process_pdf_file,
 )  # Assume you put the function in a file named utils.py
 import os
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from elasticsearch_dsl import connections, Document, Text, Keyword
-from .serializers import ArticleIndexSerializer
+from elasticsearch_dsl import connections
 from .search_indexes import ArticleIndex
+from .models import Article
 
 # Define your Elasticsearch connection
 connections.create_connection(hosts=['http://localhost:9200'])
@@ -27,6 +25,20 @@ def download_pdf(request, url):
             print(f"Error deleting file: {e}")
 
         if metadata:
+            article_model = Article.objects.create(likes=0,search=0)
+            article = ArticleIndex(
+                id=article_model.id, 
+                title=metadata["title"],
+                authors=metadata["authors"],
+                institutions=metadata["institutions"],
+                resume=metadata["abstract"],
+                content=metadata["text"],
+                references=metadata["references"],
+                keywords=metadata["keywords"],
+                urlPDF=url,
+            )
+
+            article.save()
             # You can customize the response format as needed
             response_data = {
                 "title": metadata["title"],
@@ -45,19 +57,3 @@ def download_pdf(request, url):
 
     else:
         return HttpResponse("Failed to download the file.", status=500)
-
-
-@api_view(['POST'])
-def add_article(request):
-    # Deserialize the request data using the serializer
-    serializer = ArticleIndexSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-
-    # Create an<Route path="/" element={<GererArticle />} /> instance of the ArticleIndex document
-    article_document = ArticleIndex(**serializer.validated_data)
-
-    # Save the document to Elasticsearch
-    article_document.save()
-
-    # Return a JSON response indicating success
-    return Response({'status': 'success'})
