@@ -8,5 +8,5 @@ urlpatterns = [
     path('user/update-user/<int:user_id>/',update_user,name='update user'),
     path('moderator/add-moderator/',add_moderator,name="add moderator"),
     path('moderator/update-moderator/<int:user_id>/',update_moderator,name="update moderator"),
-    path('favorite/<int:user_id>/<int:article_id>/',add_to_favorite, name='add_to_favorite')
+    path('user/favorite/<int:user_id>/<int:article_id>/',add_to_favorite, name='add_to_favorite')
 ]

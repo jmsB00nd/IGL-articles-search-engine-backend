@@ -5,6 +5,7 @@ class Article(models.Model):
     publication_date = models.DateField(null=True, blank=True)
     likes = models.IntegerField(default=0)
     search = models.IntegerField(default=0)
+    new = models.BooleanField(default=True)
 
     def __str__(self):
         return self.id

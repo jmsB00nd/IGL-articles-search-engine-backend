@@ -5,6 +5,27 @@ import pdfplumber
 import yake
 
 
+from urllib.parse import urlparse, parse_qs
+import gdown
+
+
+def download_pdf_from_drive(url):
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        file_id = url.split("id=")[1]
+
+        # Use the file ID as the file name with .pdf extension
+        file_name = f"{file_id}.pdf"
+        with open(file_name, "wb") as f:
+            f.write(response.content)
+            print(f"File '{file_name}' has been downloaded and saved.")
+        return file_name
+    else:
+        print(f"Failed to download the file. Status code: {response.status_code}")
+        return None
+
+
 def extract_keywords(pdf_path, num_keywords):
     with pdfplumber.open(pdf_path) as pdf:
         text = ""
@@ -48,6 +69,15 @@ def process_pdf_file(pdf_path):
         # Convert XML response to JSON
         cermine_json = xmltodict.parse(response.text)
         new_dict = cermine_json["article"]["front"]["article-meta"]
+        contrib_group = new_dict.get("contrib-group", {})
+        affiliation = contrib_group.get("aff")
+
+        if affiliation is not None:
+            if not isinstance(affiliation, list):
+                contrib_group["aff"] = [affiliation]
+        else:
+            # Handle the case when 'aff' key is missing or None
+            contrib_group["aff"] = ["No institutions available"]
 
         if not isinstance(new_dict["contrib-group"]["aff"], list):
             new_dict["contrib-group"]["aff"] = [new_dict["contrib-group"]["aff"]]
@@ -71,7 +101,6 @@ def process_pdf_file(pdf_path):
             ],
             "abstract": new_dict.get("abstract", {}).get("p", "No abstract available"),
         }
-
 
         # Access attributes directly without using json.dumps
         text_dict = cermine_json["article"]["body"]
