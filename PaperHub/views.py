@@ -107,18 +107,44 @@ def update_moderator(request, user_id):
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+@api_view(['GET'])
+def get_moderators(request):
+    try:
+        # Get all moderators
+        moderators = Moderator.objects.all()
 
+        # Serialize the moderators with user details
+        moderators_data = []
+        for moderator in moderators:
+            user_data = {
+                'id': moderator.user.id,
+                'username': moderator.user.username,
+                'email': moderator.user.email,
+                # Add other user fields as needed
+            }
+            moderator_data = {
+                'id': moderator.id,
+                'role': moderator.role,
+                'user': user_data,
+            }
+            moderators_data.append(moderator_data)
+
+        return Response(moderators_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def add_moderator(request):
     # Get user data from the request, adjust this based on your requirements
-    username = request.data.get('username')
+    username = request.data.get('modName')
     email = request.data.get('email')
     password = request.data.get('password')
 
     # Create a new user
     user = User.objects.create(username=username, email=email)
     user.set_password(password)
+    user.is_staff = True
     user.save()
 
     # Check if the user is already a moderator
@@ -128,8 +154,28 @@ def add_moderator(request):
     # Create a moderator instance and associate it with the user
     moderator = Moderator.objects.create(user=user, role='moderator')
 
-    # Set is_staff to True
-    user.is_staff = True
-    user.save()
-
     return Response({"detail": "Moderator added successfully"}, status=status.HTTP_200_OK)
+
+@api_view(['DELETE'])
+def delete_moderator(request, moderator_id):
+    try:
+        # Find the moderator by ID
+        moderator = Moderator.objects.get(id=moderator_id)
+
+        # Get the associated user
+        user = moderator.user
+
+        # Check if the user is a moderator
+        if not Moderator.objects.filter(user=user).exists():
+            return Response({"detail": "User is not a moderator"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Delete the moderator instance
+        moderator.delete()
+
+        # Optionally, you can also delete the associated user
+        user.delete()
+
+        return Response({"detail": "Moderator deleted successfully"}, status=status.HTTP_200_OK)
+
+    except Moderator.DoesNotExist:
+        return Response({"detail": "Moderator not found"}, status=status.HTTP_404_NOT_FOUND)

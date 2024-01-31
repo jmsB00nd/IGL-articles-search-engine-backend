@@ -10,6 +10,7 @@ class ArticleIndex(Document):
     references = Keyword(multi=True)
     keywords = Keyword(multi=True)
     urlPDF = Keyword()
+    publication_date = Keyword()
 
     class Index:
         name = "articles_index"

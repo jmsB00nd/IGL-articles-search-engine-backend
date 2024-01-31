@@ -62,7 +62,8 @@ ROOT_URLCONF = 'elasticsearch.urls'
 CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000", 
+    "http://localhost:3000",
+    "http://localhost:3001",  
 ]
 
 CORS_ALLOW_CREDENTIALS = True

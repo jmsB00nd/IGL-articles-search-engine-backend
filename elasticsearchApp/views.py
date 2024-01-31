@@ -4,6 +4,7 @@ from .utils import (
     process_pdf_file,
     download_pdf_from_drive
 ) 
+from django.shortcuts import get_object_or_404
 import os
 from rest_framework.decorators import api_view
 from elasticsearch_dsl import connections,Search
@@ -24,18 +25,30 @@ def get_data_elasticsearch(request):
     data = []
     for hit in response.hits:
         data.append({
+            "id" : hit.id,
             "title": hit.title,
-            "authors": list(hit.authors),  
-            "institutions": list(hit.institutions), 
-            "keywords": list(hit.keywords),  
-            "abstract": hit.resume,
-            "text": hit.content,
-            "references": list(hit.references), 
+            "authors": list(hit.authors),   
             "urlPDF": hit.urlPDF,
         })
 
     # Return the data as a JSON response
     return JsonResponse(data, safe=False)
+
+def get_articles_mod(request):
+    search = Search(index=ArticleIndex.Index.name)
+    response = search.execute()
+    data = []
+    for hit in response.hits:
+        article = get_object_or_404(Article, pk=hit.id)
+        data.append({
+            "id" : hit.id,
+            "title": hit.title,
+            "authors": list(hit.authors),
+            "approved" : article.approved   
+        })
+    
+    return JsonResponse(data,safe=False) 
+    
 
 
 def download_pdf(request, url):
@@ -50,7 +63,7 @@ def download_pdf(request, url):
             print(f"Error deleting file: {e}")
 
         if metadata:
-            article_model = Article.objects.create(likes=0,search=0)
+            article_model = Article.objects.create(likes=0,search=0,approved=True)
             article = ArticleIndex(
                 id=article_model.id, 
                 title=metadata["title"],
@@ -96,6 +109,20 @@ def download_pdf_drive(request, id):
             print(f"Error deleting file: {e}")
 
         if metadata:
+            article_model = Article.objects.create(likes=0,search=0,approved=True)
+            article = ArticleIndex(
+                id=article_model.id, 
+                title=metadata["title"],
+                authors=metadata["authors"],
+                institutions=metadata["institutions"],
+                resume=metadata["abstract"],
+                content=metadata["text"],
+                references=metadata["references"],
+                keywords=metadata["keywords"],
+                urlPDF=full_url,
+            )
+
+            article.save()
             # You can customize the response format as needed
             response_data = {
                 "title": metadata["title"],
@@ -114,4 +141,25 @@ def download_pdf_drive(request, id):
 
     else:
         return HttpResponse("Failed to download the file.", status=500)
+    
+def delete_article(request, article_id):
+    try:
+        # Search for the document with the specified "id" field
+        search = Search(index='articles_index').query('term', id=article_id)
+        response = search.execute()
+
+        # Delete the document if found
+        if response.hits.total.value > 0:
+            doc_id = response.hits[0].meta.id
+            article = ArticleIndex.get(id=doc_id)
+            article.delete()
+
+            article_model = Article.objects.get(id=article_id)
+            article_model.delete()
+            return JsonResponse({'message': f'Article with id {article_id} deleted successfully.'})
+        else:
+            return JsonResponse({'message': f'Article with id {article_id} not found.'}, status=404)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
