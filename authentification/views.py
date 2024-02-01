@@ -4,6 +4,17 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import logout
+from .serializer import CustomTokenObtainPairSerializer
+
+
+
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    # Replace the serializer with your custom
+    serializer_class = CustomTokenObtainPairSerializer
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -16,5 +27,7 @@ def logout_view(request):
         return Response(status=status.HTTP_205_RESET_CONTENT)
     except Exception as e :
         return Response(status=status.HTTP_400_BAD_REQUEST)
+    
+
 
 

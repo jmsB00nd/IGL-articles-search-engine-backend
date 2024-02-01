@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,permission_classes
+from rest_framework.permissions import IsAuthenticated 
 from django.contrib.auth.models import User
 from .models import PaperHubUser,Moderator,Admin
 from .serializers import UserSignupSerializer
@@ -29,6 +30,7 @@ def signup(request):
         return Response({'error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def add_to_favorite(request, user_id, article_id):
     user_profile = get_object_or_404(PaperHubUser, pk=user_id)
     article = get_object_or_404(Article, pk=article_id)
@@ -41,6 +43,7 @@ def add_to_favorite(request, user_id, article_id):
         return Response({'detail': 'Article removed from favorites.'}, status=200)  # 200 OK
 
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def update_user(request, user_id):
     try:
         # Retrieve the PaperHubUser instance
@@ -81,6 +84,7 @@ def update_user(request, user_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
     
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def update_moderator(request, user_id):
     try:
         moderator = Moderator.objects.get(id=user_id)
@@ -108,6 +112,7 @@ def update_moderator(request, user_id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_moderators(request):
     try:
         # Get all moderators
@@ -135,6 +140,7 @@ def get_moderators(request):
         return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def add_moderator(request):
     # Get user data from the request, adjust this based on your requirements
     username = request.data.get('modName')
@@ -157,6 +163,7 @@ def add_moderator(request):
     return Response({"detail": "Moderator added successfully"}, status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_moderator(request, moderator_id):
     try:
         # Find the moderator by ID
