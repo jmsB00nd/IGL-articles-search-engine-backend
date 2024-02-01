@@ -4,7 +4,7 @@ from .utils import (
     process_pdf_file,
     download_pdf_from_drive
 ) 
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404,get_list_or_404
 import os
 from rest_framework.decorators import api_view
 from elasticsearch_dsl import connections,Search
@@ -162,4 +162,57 @@ def delete_article(request, article_id):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
 
+def search_articles(request):
+    if request.method == 'GET':
+        search_query = request.GET.get('search_query', '').strip()
+
+        if not search_query:
+            return JsonResponse({'error': 'Invalid search query'}, status=400)
+
+        try:
+            search = Search(index=ArticleIndex.Index.name).query('multi_match', query=search_query ,  fields=['title', 'authors', 'resume', 'content','institutions','references','keywords'])
+            print(f"Elasticsearch Query: {search.to_dict()}")
+            response = search.execute()
+            print(f"Elasticsearch Response: {response.to_dict()}")
+            hits = response.hits
+            data = [
+                {
+                    "id": hit.id,
+                    "title": hit.title
+                } for hit in hits
+            ]
+
+            return JsonResponse(data, safe=False)
+        
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+def get_article_by_id(request, article_id):
+    try:
+        search = Search(index='articles_index').query('term', id=article_id)
+        response = search.execute()
+
+        if response.hits.total.value > 0:
+            hit = response.hits[0]
+            data = {
+                "id": hit.id,
+                "title": hit.title,
+                "refrences" : list(hit.references),
+                "content" : hit.content,
+                "institutions" : list(hit.institutions),
+                "keywords" : list(hit.keywords),
+                "resume" : hit.resume,
+                "authors": list(hit.authors),
+                "urlPDF": hit.urlPDF,
+                # Add other fields as needed
+            }
+            return JsonResponse(data)
+        else:
+            return JsonResponse({'message': f'Article with id {article_id} not found.'}, status=404)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
