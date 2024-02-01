@@ -4,8 +4,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import logout
-from PaperHub.models import PaperHubUser
-from PaperHub.serializers import PaperHubUserSerializer
 from .serializer import CustomTokenObtainPairSerializer
 
 
