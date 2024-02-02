@@ -151,11 +151,8 @@ def download_pdf_drive(request, id):
 @permission_classes([IsAuthenticated])
 def delete_article(request, article_id):
     try:
-        # Search for the document with the specified "id" field
         search = Search(index='articles_index').query('term', id=article_id)
         response = search.execute()
-
-        # Delete the document if found
         if response.hits.total.value > 0:
             doc_id = response.hits[0].meta.id
             article = ArticleIndex.get(id=doc_id)
