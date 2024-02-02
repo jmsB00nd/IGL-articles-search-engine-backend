@@ -32,15 +32,17 @@ def signup(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_to_favorite(request, user_id, article_id):
-    user_profile = get_object_or_404(PaperHubUser, pk=user_id)
+    user_profile = get_object_or_404(User, pk=user_id)
+    paperhub_user = PaperHubUser.objects.get(user=user_profile)
     article = get_object_or_404(Article, pk=article_id)
 
-    if article not in user_profile.favorite_articles.all():
-        user_profile.favorite_articles.add(article)
+    if article not in paperhub_user.favorite_articles.all():
+        paperhub_user.favorite_articles.add(article)
         return Response({'detail': 'Article added to favorites.'}, status=201)  # 201 Created
     else:
         user_profile.favorite_articles.remove(article)
         return Response({'detail': 'Article removed from favorites.'}, status=200)  # 200 OK
+    
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
