@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from .models import PaperHubUser,Moderator,Admin
 from .serializers import UserSignupSerializer
 from .serializers import PaperHubUserSerializer,ModeratorSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
 from elasticsearchApp.models import Article
@@ -25,22 +26,36 @@ def signup(request):
         PaperHubUser.objects.create(user=user, role='user')
         login(request, user)
         
-        return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+        
+        return Response({
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+            },
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+        }, status=status.HTTP_201_CREATED)
     else:
         return Response({'error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_to_favorite(request, user_id, article_id):
-    user_profile = get_object_or_404(PaperHubUser, pk=user_id)
+    user_profile = get_object_or_404(User, pk=user_id)
+    paperhub_user = PaperHubUser.objects.get(user=user_profile)
     article = get_object_or_404(Article, pk=article_id)
 
-    if article not in user_profile.favorite_articles.all():
-        user_profile.favorite_articles.add(article)
+    if article not in paperhub_user.favorite_articles.all():
+        paperhub_user.favorite_articles.add(article)
         return Response({'detail': 'Article added to favorites.'}, status=201)  # 201 Created
     else:
         user_profile.favorite_articles.remove(article)
         return Response({'detail': 'Article removed from favorites.'}, status=200)  # 200 OK
+    
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -135,7 +150,6 @@ def add_moderator(request):
     if Moderator.objects.filter(user=user).exists():
         return Response({"detail": "User is already a moderator"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create a moderator instance and associate it with the user
     moderator = Moderator.objects.create(user=user, role='moderator')
 
     return Response({"detail": "Moderator added successfully"}, status=status.HTTP_200_OK)
@@ -144,23 +158,16 @@ def add_moderator(request):
 @permission_classes([IsAuthenticated])
 def delete_moderator(request, moderator_id):
     try:
-        # Find the moderator by ID
         moderator = Moderator.objects.get(id=moderator_id)
-
-        # Get the associated user
         user = moderator.user
-
-        # Check if the user is a moderator
         if not Moderator.objects.filter(user=user).exists():
             return Response({"detail": "User is not a moderator"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Delete the moderator instance
         moderator.delete()
-
-        # Optionally, you can also delete the associated user
         user.delete()
 
         return Response({"detail": "Moderator deleted successfully"}, status=status.HTTP_200_OK)
 
     except Moderator.DoesNotExist:
         return Response({"detail": "Moderator not found"}, status=status.HTTP_404_NOT_FOUND)
+
+

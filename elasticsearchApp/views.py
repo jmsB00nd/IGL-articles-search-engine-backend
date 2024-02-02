@@ -12,6 +12,8 @@ from rest_framework.decorators import api_view
 from elasticsearch_dsl import connections,Search
 from .search_indexes import ArticleIndex
 from .models import Article
+from PaperHub.models import PaperHubUser
+from django.contrib.auth.models import User
 
 # Define your Elasticsearch connection
 connections.create_connection(hosts=['http://localhost:9200'])
@@ -149,11 +151,8 @@ def download_pdf_drive(request, id):
 @permission_classes([IsAuthenticated])
 def delete_article(request, article_id):
     try:
-        # Search for the document with the specified "id" field
         search = Search(index='articles_index').query('term', id=article_id)
         response = search.execute()
-
-        # Delete the document if found
         if response.hits.total.value > 0:
             doc_id = response.hits[0].meta.id
             article = ArticleIndex.get(id=doc_id)
@@ -222,3 +221,31 @@ def get_article_by_id(request, article_id):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+def get_favourite(request, user_id):
+    try:
+        user_profile = get_object_or_404(User, pk=user_id)
+        paperhub_user = PaperHubUser.objects.get(user=user_profile)
+        favorite_articles = paperhub_user.favorite_articles.all()
+        articles_details = []
+
+        for article in favorite_articles:
+            search = Search(index=ArticleIndex.Index.name)
+            search = search.query("term", id=article.id)
+            response = search.execute()
+            if response.hits.total.value > 0:
+                article_details = {
+                    'id': response.hits[0].id,
+                    'title': response.hits[0].title,
+                    'resume': response.hits[0].resume,
+                }
+                articles_details.append(article_details)
+
+        return JsonResponse({'favorite_articles': articles_details}, status=200)
+
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+
+    except PaperHubUser.DoesNotExist:
+        return JsonResponse({'error': 'PaperHubUser not found'}, status=404)
