@@ -185,7 +185,7 @@ def search_articles(request,search_query):
             data = [
                 {
                     "id": hit.id,
-                    "title": hit.title
+                    "title": hit.title,
                 } for hit in hits
             ]
 
