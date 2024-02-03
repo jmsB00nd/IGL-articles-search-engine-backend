@@ -18,6 +18,8 @@ from django.contrib.auth.models import User
 # Define your Elasticsearch connection
 connections.create_connection(hosts=['http://localhost:9200'])
 
+
+api_view(['GET']) 
 @permission_classes([IsAuthenticated])
 def get_data_elasticsearch(request):
     # Create a Search object on the ArticleIndex
@@ -38,6 +40,8 @@ def get_data_elasticsearch(request):
 
     # Return the data as a JSON response
     return JsonResponse(data, safe=False)
+
+
 
 @permission_classes([IsAuthenticated])
 def get_articles_mod(request):
@@ -167,19 +171,16 @@ def delete_article(request, article_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
     
+
+
+
+api_view(['GET'])    
 @permission_classes([IsAuthenticated])
-def search_articles(request):
+def search_articles(request,search_query):
     if request.method == 'GET':
-        search_query = request.GET.get('search_query', '').strip()
-
-        if not search_query:
-            return JsonResponse({'error': 'Invalid search query'}, status=400)
-
         try:
             search = Search(index=ArticleIndex.Index.name).query('multi_match', query=search_query ,  fields=['title', 'authors', 'resume', 'content','institutions','references','keywords'])
-            print(f"Elasticsearch Query: {search.to_dict()}")
             response = search.execute()
-            print(f"Elasticsearch Response: {response.to_dict()}")
             hits = response.hits
             data = [
                 {
@@ -195,6 +196,7 @@ def search_articles(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+api_view(['GET']) 
 @permission_classes([IsAuthenticated])
 def get_article_by_id(request, article_id):
     try:
@@ -221,8 +223,9 @@ def get_article_by_id(request, article_id):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-    
 
+api_view(['GET'])    
+@permission_classes([IsAuthenticated])
 def get_favourite(request, user_id):
     try:
         user_profile = get_object_or_404(User, pk=user_id)

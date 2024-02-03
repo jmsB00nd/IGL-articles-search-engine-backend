@@ -11,5 +11,5 @@ urlpatterns = [
     path("get_article_id/<int:article_id>/",get_article_by_id, name="get_articles_id"),
     path("delete_article/<int:article_id>/",delete_article, name="delete_article"),
     path("get_favorites/<int:user_id>/",get_favourite, name="get-favourite_article"),
-    path("search/",search_articles, name="search article"),
+    path("search/<str:search_query>/",search_articles, name="search_article"),
 ]
