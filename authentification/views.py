@@ -20,6 +20,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 @permission_classes([IsAuthenticated])
 def logout_view(request):    
     try:
+        print(request)
         logout(request)
         refresh_token = request.data["refresh_token"]
         token = RefreshToken(refresh_token)
