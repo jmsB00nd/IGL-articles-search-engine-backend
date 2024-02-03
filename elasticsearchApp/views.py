@@ -34,8 +34,6 @@ def get_data_elasticsearch(request):
         data.append({
             "id" : hit.id,
             "title": hit.title,
-            "authors": list(hit.authors),   
-            "urlPDF": hit.urlPDF,
         })
 
     # Return the data as a JSON response
