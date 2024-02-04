@@ -37,6 +37,7 @@ def get_data_elasticsearch(request):
             "authors": list(hit.authors),
             "keywords": list(hit.keywords),
             "institutions": list(hit.institutions),
+            "resume": hit.resume
         })
 
     # Return the data as a JSON response
