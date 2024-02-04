@@ -1,5 +1,7 @@
+import json
 from django.http import HttpResponse, JsonResponse
 from .utils import (
+    check_article_favorite,
     download_pdf_from_url,
     process_pdf_file,
     download_pdf_from_drive
@@ -19,9 +21,10 @@ from django.contrib.auth.models import User
 connections.create_connection(hosts=['http://localhost:9200'])
 
 
-api_view(['GET']) 
+api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_data_elasticsearch(request):
+    user_id = request.GET.get('user_id')
     # Create a Search object on the ArticleIndex
     search = Search(index=ArticleIndex.Index.name)
 
@@ -37,7 +40,8 @@ def get_data_elasticsearch(request):
             "authors": list(hit.authors),
             "keywords": list(hit.keywords),
             "institutions": list(hit.institutions),
-            "resume": hit.resume
+            "resume": hit.resume,
+            "isFavorite": check_article_favorite(hit.id, user_id)
         })
 
     # Return the data as a JSON response

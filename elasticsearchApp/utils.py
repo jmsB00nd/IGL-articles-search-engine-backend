@@ -1,9 +1,13 @@
+from collections import UserDict
 import os
+from django.shortcuts import get_object_or_404
 import requests
 import xmltodict
 import pdfplumber
 import yake
 from urllib.parse import urlparse, parse_qs
+
+from PaperHub.models import PaperHubUser
 
 
 def download_pdf_from_drive(url):
@@ -183,3 +187,19 @@ def process_pdf_file(pdf_path):
     else:
         # Print an error message
         print(f"Error: {response.status_code} - {response.text}")
+
+from django.shortcuts import get_object_or_404
+
+def check_article_favorite(user_id, article_id):
+    try:
+        user_profile = get_object_or_404(UserDict, pk=user_id)
+        paperhub_user = PaperHubUser.objects.get(user=user_profile)
+        favorite_articles = paperhub_user.favorite_articles.all()
+        return any(article_id == article_tuple["id"] for article_tuple in favorite_articles)
+    except PaperHubUser.DoesNotExist:
+        # Handle the case when PaperHubUser does not exist
+        return False
+    except Exception as e:
+        # Handle other potential exceptions, log the error, or return a default value
+        print(f"An error occurred: {e}")
+        return False

@@ -51,10 +51,10 @@ def add_to_favorite(request, user_id, article_id):
 
     if article not in paperhub_user.favorite_articles.all():
         paperhub_user.favorite_articles.add(article)
-        return Response({'detail': 'Article added to favorites.'}, status=201)  # 201 Created
+        return Response({'detail': 'Article added to favorites.', 'type': 'add'}, status=201)  # 201 Created
     else:
         user_profile.favorite_articles.remove(article)
-        return Response({'detail': 'Article removed from favorites.'}, status=200)  # 200 OK
+        return Response({'detail': 'Article removed from favorites.', 'type': 'remove'}, status=200)  # 200 OK
     
 
 @api_view(['PUT'])
