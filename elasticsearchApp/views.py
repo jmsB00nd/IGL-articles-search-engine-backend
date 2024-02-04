@@ -49,6 +49,7 @@ def get_data_elasticsearch(request):
 def get_articles_mod(request):
     search = Search(index=ArticleIndex.Index.name)
     response = search.execute()
+    print(response)
     data = []
     for hit in response.hits:
         article = get_object_or_404(Article, pk=hit.id)
@@ -56,11 +57,39 @@ def get_articles_mod(request):
             "id" : hit.id,
             "title": hit.title,
             "authors": list(hit.authors),
-            "approved" : article.approved   
+            "approved" : article.approved
         })
     
-    return JsonResponse(data,safe=False) 
-    
+    return JsonResponse(data,safe=False)
+
+api_view(['GET']) 
+@permission_classes([IsAuthenticated])
+def get_articles_mod_by_id(request, article_id):
+    try:
+        search = Search(index=ArticleIndex.Index.name).query('term', id=article_id)
+        response = search.execute()
+
+        if response.hits.total.value > 0:
+            hit = response.hits[0]
+            article = get_object_or_404(Article, pk=hit.id)
+            data = {
+                "id": hit.id,
+                "title": hit.title,
+                "references" : list(hit.references) if hasattr(hit, 'references') and hit.references is not None else [],
+                "content" : hit.content,
+                "institutions" : list(hit.institutions),
+                "keywords" : list(hit.keywords),
+                "resume" : hit.resume,
+                "authors": list(hit.authors),
+                "urlPDF": hit.urlPDF,
+                "approved": article.approved
+            }
+            return JsonResponse(data)
+        else:
+            return JsonResponse({'message': f'Article with id {article_id} not found.'}, status=404)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @permission_classes([IsAuthenticated])
 def download_pdf(request, url):
@@ -121,7 +150,7 @@ def download_pdf_drive(request, id):
             print(f"Error deleting file: {e}")
 
         if metadata:
-            article_model = Article.objects.create(likes=0,search=0,approved=True)
+            article_model = Article.objects.create(likes=0,search=0,approved=False)
             article = ArticleIndex(
                 id=article_model.id, 
                 title=metadata["title"],
@@ -172,9 +201,6 @@ def delete_article(request, article_id):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-    
-
-
 
 api_view(['GET'])    
 @permission_classes([IsAuthenticated])
