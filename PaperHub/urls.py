@@ -10,6 +10,6 @@ urlpatterns = [
     path('moderator/update-moderator/<int:user_id>/',update_moderator,name="update moderator"),
     path('moderator/delete-moderator/<int:moderator_id>/',delete_moderator,name="delete moderator"),
     path('moderator/get_moderators/', get_moderators, name='get_moderators'),
-    path('moderator/approve_article/<int:article_id>/', approve_article, name='approve article'),
+    path('moderator/approve_article/<int:article_id>/', approve_article, name='approve_article'),
     path('user/favorite/<int:user_id>/<int:article_id>/',add_to_favorite, name='add_to_favorite')
 ]

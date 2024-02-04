@@ -175,7 +175,11 @@ def delete_moderator(request, moderator_id):
 @permission_classes([IsAuthenticated])
 def approve_article(request, article_id):
     article = get_object_or_404(Article, pk=article_id)
+    if article.approved == False:
+        return Response({"detail": "Article is already approved."}, status=400)
+
     article.approved = False
     article.save()
-    return Response(status=200)
+
+    return Response({"detail": "Article has been approved successfully."}, status=200)
 
