@@ -1,4 +1,3 @@
-from collections import UserDict
 import os
 from django.shortcuts import get_object_or_404
 import requests
@@ -6,8 +5,11 @@ import xmltodict
 import pdfplumber
 import yake
 from urllib.parse import urlparse, parse_qs
+from django.contrib.auth.models import User
+
 
 from PaperHub.models import PaperHubUser
+from elasticsearchApp.models import Article
 
 
 def download_pdf_from_drive(url):
@@ -190,12 +192,12 @@ def process_pdf_file(pdf_path):
 
 from django.shortcuts import get_object_or_404
 
-def check_article_favorite(user_id, article_id):
+def check_article_favorite(article_id, user_id):
     try:
-        user_profile = get_object_or_404(UserDict, pk=user_id)
+        user_profile = get_object_or_404(User, pk=user_id)
         paperhub_user = PaperHubUser.objects.get(user=user_profile)
-        favorite_articles = paperhub_user.favorite_articles.all()
-        return any(article_id == article_tuple["id"] for article_tuple in favorite_articles)
+        article = get_object_or_404(Article, pk=article_id)
+        return (article in paperhub_user.favorite_articles.all())
     except PaperHubUser.DoesNotExist:
         # Handle the case when PaperHubUser does not exist
         return False
