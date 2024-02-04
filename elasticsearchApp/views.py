@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404,get_list_or_404
 import os
 from rest_framework.decorators import api_view
-from elasticsearch_dsl import connections,Search
+from elasticsearch_dsl import connections,Search,UpdateByQuery,Q
 from .search_indexes import ArticleIndex
 from .models import Article
 from PaperHub.models import PaperHubUser
@@ -258,3 +258,40 @@ def get_favourite(request, user_id):
 
     except PaperHubUser.DoesNotExist:
         return JsonResponse({'error': 'PaperHubUser not found'}, status=404)
+    
+
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_article(request, article_id):
+    try:
+        # Retrieve the article from Elasticsearch
+        search = Search(index='articles_index').query(Q('term', id=article_id))
+        response = search.execute()
+
+        if response.hits.total.value > 0:
+            # Get the existing article data
+            hit = response.hits[0]
+
+            # Get the new data from the request data
+            new_data = request.data
+
+            # Build the script for updating fields
+            script_source = ""
+            for field, value in new_data.items():
+                script_source += f"ctx._source.{field} = params.{field};"
+
+            # Update the fields in Elasticsearch
+            update_query = UpdateByQuery(index='articles_index').filter(Q('term', id=article_id)).script(
+                source=script_source,
+                params=new_data
+            )
+            update_query.execute()
+
+            return JsonResponse({'message': f'Article content updated successfully.'}, status=200)
+        else:
+            return JsonResponse({'message': f'Article with id {article_id} not found in Elasticsearch.'}, status=404)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
