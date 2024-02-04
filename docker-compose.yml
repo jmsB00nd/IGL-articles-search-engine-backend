@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  server:
+    build:
+      context: ./server
+    ports:
+      - "8000:8000"
+    depends_on:
+      - elasticsearch
+      - cermine
+
+  elasticsearch:
+    image: bitnami/elasticsearch
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - ELASTICSEARCH_HEAP_SIZE=512m
+    volumes:
+      - /srv/elas1:/bitnami/elasticsearch/data
+
+  cermine:
+    image: elifesciences/cermine:1.13
+    container_name: cermine
+    ports:
+      - "8072:8080"
