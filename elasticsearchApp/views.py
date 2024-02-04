@@ -34,6 +34,9 @@ def get_data_elasticsearch(request):
         data.append({
             "id" : hit.id,
             "title": hit.title,
+            "authors": list(hit.authors),
+            "keywords": list(hit.keywords),
+            "institutions": list(hit.institutions),
         })
 
     # Return the data as a JSON response
@@ -183,7 +186,11 @@ def search_articles(request,search_query):
             data = [
                 {
                     "id": hit.id,
-                    "title": hit.title
+                    "title": hit.title,
+                    "authors": list(hit.authors),
+                    "keywords": list(hit.keywords),
+                    "institutions": list(hit.institutions),
+                    "resume": hit.resume[0: 200],
                 } for hit in hits
             ]
 
