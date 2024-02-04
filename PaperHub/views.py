@@ -169,5 +169,13 @@ def delete_moderator(request, moderator_id):
 
     except Moderator.DoesNotExist:
         return Response({"detail": "Moderator not found"}, status=status.HTTP_404_NOT_FOUND)
+    
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def approve_article(request, article_id):
+    article = get_object_or_404(Article, pk=article_id)
+    article.approved = False
+    article.save()
+    return Response(status=200)
 
