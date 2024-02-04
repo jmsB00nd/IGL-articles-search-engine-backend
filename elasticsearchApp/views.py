@@ -213,7 +213,7 @@ def get_article_by_id(request, article_id):
             data = {
                 "id": hit.id,
                 "title": hit.title,
-                "refrences" : list(hit.references),
+                "references" : list(hit.references) if hasattr(hit, 'references') and hit.references is not None else [],
                 "content" : hit.content,
                 "institutions" : list(hit.institutions),
                 "keywords" : list(hit.keywords),
