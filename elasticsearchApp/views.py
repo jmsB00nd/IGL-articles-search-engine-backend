@@ -34,6 +34,7 @@ def get_data_elasticsearch(request):
     # Extract data from the search response
     data = []
     for hit in response.hits:
+        article = get_object_or_404(Article, pk=hit.id)
         data.append({
             "id" : hit.id,
             "title": hit.title,
@@ -41,7 +42,8 @@ def get_data_elasticsearch(request):
             "keywords": list(hit.keywords),
             "institutions": list(hit.institutions),
             "resume": hit.resume,
-            "isFavorite": check_article_favorite(hit.id, user_id)
+            "isFavorite": check_article_favorite(hit.id, user_id),
+            "approved": article.approved,
         })
 
     # Return the data as a JSON response
@@ -211,19 +213,23 @@ api_view(['GET'])
 def search_articles(request,search_query):
     if request.method == 'GET':
         try:
+            user_id = request.GET.get('user_id')
             search = Search(index=ArticleIndex.Index.name).query('multi_match', query=search_query ,  fields=['title', 'authors', 'resume', 'content','institutions','references','keywords'])
             response = search.execute()
-            hits = response.hits
-            data = [
-                {
-                    "id": hit.id,
-                    "title": hit.title,
-                    "authors": list(hit.authors),
-                    "keywords": list(hit.keywords),
-                    "institutions": list(hit.institutions),
-                    "resume": hit.resume[0: 200],
-                } for hit in hits
-            ]
+            data = []
+            
+            for hit in response.hits:
+                article = get_object_or_404(Article, pk=hit.id)
+                data.append({
+                "id": hit.id,
+                "title": hit.title,
+                "authors": list(hit.authors),
+                "keywords": list(hit.keywords),
+                "institutions": list(hit.institutions),
+                "resume": hit.resume[0: 200],
+                "isFavorite": check_article_favorite(hit.id, user_id),
+                "approved": article.approved,
+                })
 
             return JsonResponse(data, safe=False)
         
@@ -236,6 +242,7 @@ api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_article_by_id(request, article_id):
     try:
+        user_id = request.GET.get('user_id')
         search = Search(index='articles_index').query('term', id=article_id)
         response = search.execute()
 
@@ -251,6 +258,7 @@ def get_article_by_id(request, article_id):
                 "resume" : hit.resume,
                 "authors": list(hit.authors),
                 "urlPDF": hit.urlPDF,
+                "isFavorite": check_article_favorite(hit.id, user_id),
                 # Add other fields as needed
             }
             return JsonResponse(data)

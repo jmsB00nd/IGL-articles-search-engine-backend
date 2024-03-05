@@ -1,7 +1,7 @@
 from django.test import TestCase
 from unittest.mock import patch, MagicMock
 import os
-from myapp.utils import download_pdf_from_drive
+from elasticsearchApp.utils import download_pdf_from_drive
 
 
 #written by abdellah boukefallah
@@ -15,7 +15,7 @@ class MyAppTests(TestCase):
         mock_get.return_value = mock_response
 
         # Define test URL with 'id' parameter
-        test_url_with_id = "https://example.com/download?id=123"
+        test_url_with_id = "https://drive.google.com/uc?export=download&id=1Q5wUI4WjswDZoEekxYsilBFTVVYlkrOY" #example
 
         # Call the function being tested
         file_name = download_pdf_from_drive(test_url_with_id)
@@ -24,7 +24,7 @@ class MyAppTests(TestCase):
         self.assertIsNotNone(file_name)
 
         # Verify file name
-        expected_file_name = "123.pdf"
+        expected_file_name = "1Q5wUI4WjswDZoEekxYsilBFTVVYlkrOY.pdf"
         self.assertEqual(file_name, expected_file_name)
 
         # Verify file content
@@ -42,7 +42,7 @@ class MyAppTests(TestCase):
         mock_pdf.pages[0].extract_text.return_value = "This is a mock PDF text"
         mock_open.return_value.__enter__.return_value = mock_pdf
 
-        from myapp.utils import extract_keywords
+        from elasticsearchApp.utils import extract_keywords
 
         keywords = extract_keywords("mock_pdf_path", 5)
 
@@ -55,7 +55,7 @@ class MyAppTests(TestCase):
         mock_response.content = b"Test PDF content"
         mock_get.return_value = mock_response
 
-        from myapp.utils import download_pdf_from_url
+        from elasticsearchApp.utils import download_pdf_from_url
 
         file_name = download_pdf_from_url("mock_url")
 
